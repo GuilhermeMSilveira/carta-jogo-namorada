@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Uma cartinha pra você 💌</title>
+  <link rel="icon" href="data:,">
+
+  <style>
+    :root{
+      --bg1:#ffe6f0;
+      --bg2:#fff7fb;
+      --paper:#ffffff;
+      --shadow: rgba(0,0,0,.15);
+      --pink:#ff4d8d;
+      --pink2:#ff8fb3;
+      --text:#2b2b2b;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(circle at top, var(--bg2), var(--bg1));
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:var(--text);
+      overflow:hidden;
+      padding:24px;
+    }
+
+    .wrap{width:min(520px, 100%); text-align:center}
+    h1{margin:0 0 12px; font-size:20px; font-weight:800}
+    .hint{margin:0 0 18px; opacity:.75; font-size:14px}
+
+    /* Envelope */
+    .envelope{
+      margin:0 auto;
+      width:320px;
+      height:210px;
+      position:relative;
+      cursor:pointer;
+      transform-origin:center;
+      animation: floaty 2.6s ease-in-out infinite;
+      filter: drop-shadow(0 18px 18px var(--shadow));
+      user-select:none;
+    }
+    @keyframes floaty{
+      0%,100%{transform: translateY(0) rotate(-1deg)}
+      50%{transform: translateY(-8px) rotate(1deg)}
+    }
+    .env-back{
+      position:absolute; inset:0;
+      background: linear-gradient(135deg, #fff, #ffe3ee);
+      border-radius:14px;
+      border:2px solid rgba(255,77,141,.35);
+    }
+    .env-front{
+      position:absolute; inset:0;
+      border-radius:14px;
+      overflow:hidden;
+    }
+    .tri-left, .tri-right, .tri-bottom{
+      position:absolute; width:0; height:0; border-style:solid;
+    }
+    .tri-left{
+      left:0; top:0;
+      border-width:105px 0 105px 160px;
+      border-color: transparent transparent transparent rgba(255,77,141,.18);
+    }
+    .tri-right{
+      right:0; top:0;
+      border-width:105px 160px 105px 0;
+      border-color: transparent rgba(255,77,141,.18) transparent transparent;
+    }
+    .tri-bottom{
+      left:0; bottom:0;
+      border-width:0 160px 120px 160px;
+      border-color: transparent transparent rgba(255,77,141,.26) transparent;
+    }
+
+    .flap{
+      position:absolute;
+      left:0; top:0;
+      width:0; height:0;
+      border-style:solid;
+      border-width:110px 160px 0 160px;
+      border-color: rgba(255,77,141,.28) transparent transparent transparent;
+      transform-origin: top center;
+      transition: transform 900ms cubic-bezier(.2,.9,.2,1);
+      filter: drop-shadow(0 8px 10px rgba(0,0,0,.08));
+    }
+
+    /* Cartão pequeno dentro (só como preview) */
+    .card{
+      position:absolute;
+      left:18px; right:18px;
+      bottom:14px;
+      height:170px;
+      background: var(--paper);
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,.06);
+      box-shadow: 0 12px 18px rgba(0,0,0,.08);
+      transform: translateY(90px);
+      transition: transform 900ms cubic-bezier(.2,.9,.2,1);
+      padding:16px 16px 14px;
+      text-align:left;
+      overflow:hidden;
+    }
+    .seal{
+      position:absolute;
+      left:50%; bottom:18px;
+      transform:translateX(-50%);
+      width:44px; height:44px;
+      background: radial-gradient(circle at 30% 30%, #fff, var(--pink2));
+      border:2px solid rgba(255,77,141,.45);
+      border-radius:999px;
+      display:grid; place-items:center;
+      font-size:18px;
+    }
+
+    .title{
+      display:flex; align-items:center; gap:10px;
+      font-weight:900; letter-spacing:.2px;
+      margin:0 0 10px;
+    }
+    .pill{
+      font-size:12px;
+      padding:4px 10px;
+      border-radius:999px;
+      background: rgba(255,77,141,.12);
+      border:1px solid rgba(255,77,141,.25);
+      color:#b51f55;
+      font-weight:800;
+    }
+
+    .typing{
+      font-size:15px;
+      line-height:1.45;
+      margin:0;
+      white-space:pre-wrap;
+      min-height:92px;
+    }
+
+    .actions{
+      display:flex; gap:10px; margin-top:10px;
+    }
+    button{
+      border:0; border-radius:12px;
+      padding:10px 12px;
+      font-weight:900;
+      cursor:pointer;
+      transition: transform .12s ease;
+    }
+    button:active{transform: scale(.98)}
+    .btn-primary{
+      background: linear-gradient(135deg, var(--pink), #ff2f78);
+      color:white;
+    }
+    .btn-ghost{
+      background: rgba(0,0,0,.04);
+      color: #222;
+    }
+
+    /* Open state do envelope */
+    .open .flap{ transform: rotateX(180deg); }
+    .open .card{ transform: translateY(0); }
+
+    /* Hearts */
+    .heart{
+      position:absolute;
+      bottom:-20px;
+      font-size:16px;
+      opacity:.9;
+      animation: rise 2.8s linear forwards;
+      user-select:none;
+      pointer-events:none;
+      z-index: 10;
+    }
+    @keyframes rise{
+      from{ transform: translateY(0) translateX(0) scale(1); opacity:.9; }
+      to{ transform: translateY(-320px) translateX(var(--drift)) scale(1.35); opacity:0; }
+    }
+
+    /* Modal extra (abraço) */
+    .modal{
+      position:fixed; inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      background: rgba(0,0,0,.35);
+      z-index: 1000;
+    }
+    .modal.show{display:flex}
+    .modal-card{
+      width:min(520px, 100%);
+      background:white;
+      border-radius:16px;
+      padding:18px;
+      box-shadow: 0 18px 40px rgba(0,0,0,.28);
+      text-align:left;
+    }
+    .modal-card h2{margin:0 0 8px}
+    .modal-card p{margin:0 0 14px; line-height:1.45}
+
+    /* ===== CARTA GRANDE (FOLHA) ===== */
+    .letter-modal{
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 22px;
+      background: rgba(0,0,0,.35);
+      z-index: 999;
+    }
+    .letter-modal.show{ display:flex; }
+
+    .letter-sheet{
+      width: min(720px, 100%);
+      max-height: min(82vh, 820px);
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.28);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .letter-head{
+      padding: 16px 18px;
+      border-bottom: 1px solid rgba(0,0,0,.06);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .letter-head h2{
+      margin:0;
+      font-size:18px;
+    }
+
+    .letter-body{
+      padding: 16px 18px 18px;
+      max-height: calc(min(82vh, 820px) - 64px);
+      overflow: auto;              /* ✅ rolagem */
+      text-align: left;
+    }
+
+    .letter-text{
+      margin:0;
+      font-size:16px;
+      line-height:1.6;
+      white-space: pre-wrap;       /* ✅ respeita quebras */
+    }
+
+    .letter-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:14px;
+    }
+
+    .btn-close{
+      border:0;
+      border-radius:12px;
+      padding:10px 12px;
+      font-weight:900;
+      cursor:pointer;
+      background: rgba(0,0,0,.06);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>Tenho uma coisinha pra você 💌</h1>
+    <p class="hint">Clique no envelope para abrir a cartinha.</p>
+
+    <div class="envelope" id="env" role="button" aria-label="Abrir cartinha">
+      <div class="env-back"></div>
+      <div class="env-front">
+        <div class="tri-left"></div>
+        <div class="tri-right"></div>
+        <div class="tri-bottom"></div>
+        <div class="flap"></div>
+
+        <!-- preview pequeno (fica lindo, mas a carta real abre em tela grande) -->
+        <div class="card">
+          <div class="title">
+            <div>Para você</div>
+            <span class="pill">com carinho</span>
+          </div>
+          <p class="typing" id="typing"></p>
+          <div class="actions">
+            <button class="btn-primary" id="btnBack">Voltar pro jogo 🎮</button>
+            <button class="btn-ghost" id="btnReplay">Rever ✨</button>
+          </div>
+        </div>
+
+        <div class="seal">💗</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Carta grande (folha) -->
+  <div class="letter-modal" id="letterModal">
+    <div class="letter-sheet" role="dialog" aria-label="Cartinha">
+      <div class="letter-head">
+        <h2>Uma cartinha pra você 💌</h2>
+        <button class="btn-close" id="btnLetterClose">Fechar</button>
+      </div>
+
+      <div class="letter-body" id="letterScroll">
+        <p class="letter-text" id="letterText"></p>
+
+        <div class="letter-actions">
+          <button class="btn-primary" id="btnBack2">Voltar pro jogo 🎮</button>
+          <button class="btn-ghost" id="btnReplay2">Rever ✨</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal extra -->
+  <div class="modal" id="modal">
+    <div class="modal-card">
+      <h2>Eu te amo 🥰</h2>
+      <p id="modalText"></p>
+      <button class="btn-primary" id="btnClose">Fechar</button>
+    </div>
+  </div>
+
+  <script>
+    // ✅ TROQUE AQUI O TEXTO DA CARTA:
+    const message =
+`Oi meu amor,
+
+Eu queria te lembrar que você é uma das melhores partes do meu dia.
+Mesmo nas coisas simples, você deixa tudo mais leve.
+
+Obrigado por ser minha companhia, meu carinho e meu lugar seguro.
+Eu te amo. 💗
+
+— (Seu Guilherme Marques Silveira)`;
+
+    // ✅ Mensagem extra ao abrir:
+    const extra = "Se você leu até aqui, vem cá ganhar um abraço bem demorado 😌💗";
+
+    const env = document.getElementById("env");
+    const typingEl = document.getElementById("typing");
+
+    const btnReplay = document.getElementById("btnReplay");
+    const btnBack = document.getElementById("btnBack");
+
+    const modal = document.getElementById("modal");
+    const modalText = document.getElementById("modalText");
+    const btnClose = document.getElementById("btnClose");
+
+    const letterModal = document.getElementById("letterModal");
+    const letterText = document.getElementById("letterText");
+    const btnLetterClose = document.getElementById("btnLetterClose");
+    const btnBack2 = document.getElementById("btnBack2");
+    const btnReplay2 = document.getElementById("btnReplay2");
+    const letterScroll = document.getElementById("letterScroll");
+
+    let opened = false;
+    let typingTimer = null;
+    let extraTimer = null;
+
+    // ✅ agora tem callback quando termina
+    function typeWriterOn(el, text, speed=14, onTick, onDone){
+      clearInterval(typingTimer);
+      el.textContent = "";
+      let i = 0;
+
+      typingTimer = setInterval(() => {
+        el.textContent += text[i] ?? "";
+        i++;
+
+        if(onTick) onTick();
+
+        if(i >= text.length){
+          clearInterval(typingTimer);
+          if(onDone) onDone();
+        }
+      }, speed);
+    }
+
+    function typePreview(){
+      typeWriterOn(typingEl, message, 10);
+    }
+
+    function typeBigLetter(){
+      // ✅ se clicar “Rever”, cancela timer antigo do extra
+      clearTimeout(extraTimer);
+
+      typeWriterOn(
+        letterText,
+        message,
+        14,
+        () => {
+          // ✅ rola automaticamente enquanto digita
+          letterScroll.scrollTop = letterScroll.scrollHeight;
+        },
+        () => {
+          // ✅ terminou o texto COMPLETO -> espera 30s e mostra o extra
+          extraTimer = setTimeout(() => {
+            modalText.textContent = extra;
+            modal.classList.add("show");
+          }, 30000);
+        }
+      );
+    }
+
+    function spawnHearts(count=10){
+      for(let i=0;i<count;i++){
+        const h = document.createElement("div");
+        h.className = "heart";
+        h.textContent = Math.random() > .35 ? "💗" : "💖";
+        h.style.left = (10 + Math.random()*80) + "vw";
+        h.style.setProperty("--drift", (Math.random()*120 - 60) + "px");
+        h.style.animationDuration = (2.2 + Math.random()*1.6) + "s";
+        h.style.fontSize = (14 + Math.random()*14) + "px";
+        document.body.appendChild(h);
+        setTimeout(() => h.remove(), 3500);
+      }
+    }
+
+    function openLetter(){
+      if(opened) return;
+      opened = true;
+
+      env.classList.add("open");
+      spawnHearts(14);
+
+      // escreve no preview
+      typePreview();
+
+      // ✅ abre a carta grande (folha) e digita
+      letterModal.classList.add("show");
+      typeBigLetter();
+
+      // ❌ REMOVIDO: não abre mais em 2.2s
+      // agora só aparece depois de terminar + 30s
+    }
+
+    env.addEventListener("click", openLetter);
+
+    // Preview: Rever
+    btnReplay.addEventListener("click", (e) => {
+      e.stopPropagation();
+      spawnHearts(8);
+      typePreview();
+
+      // também atualiza a folha, caso esteja aberta
+      if(letterModal.classList.contains("show")) typeBigLetter();
+    });
+
+    // Voltar pro jogo
+    btnBack.addEventListener("click", (e) => {
+      e.stopPropagation();
+      window.location.href = "memoria.html";
+    });
+
+    // Carta grande: Fechar
+    btnLetterClose.addEventListener("click", () => letterModal.classList.remove("show"));
+    letterModal.addEventListener("click", (e) => {
+      if(e.target === letterModal) letterModal.classList.remove("show");
+    });
+
+    // Carta grande: botões
+    btnBack2.addEventListener("click", () => window.location.href = "memoria.html");
+    btnReplay2.addEventListener("click", () => {
+      spawnHearts(8);
+      typeBigLetter();
+    });
+
+    // Modal extra
+    btnClose.addEventListener("click", () => modal.classList.remove("show"));
+    modal.addEventListener("click", (e) => {
+      if(e.target === modal) modal.classList.remove("show");
+    });
+  </script>
+</body>
+</html>

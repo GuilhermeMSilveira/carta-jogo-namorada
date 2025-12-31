@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Encontre os pares 💗</title>
+  <link rel="icon" href="data:,">
+
+  <style>
+    :root{
+      --bg1:#ffe6f0;
+      --bg2:#fff7fb;
+      --pink:#ff4d8d;
+      --shadow: rgba(0,0,0,.15);
+      --text:#2b2b2b;
+    }
+
+    *{ box-sizing:border-box }
+
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(circle at top, var(--bg2), var(--bg1));
+      min-height:100vh;
+      color:var(--text);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    }
+
+    .wrap{ width:min(900px, 100%); }
+
+    header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-bottom:14px;
+    }
+    h1{ margin:0; font-size:20px; }
+    .sub{ font-size:14px; opacity:.75; margin-top:4px; }
+
+    .stats{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      background: rgba(255,255,255,.55);
+      padding:10px 12px;
+      border-radius:14px;
+      box-shadow: 0 10px 18px rgba(0,0,0,.08);
+    }
+    .pill{
+      padding:6px 10px;
+      border-radius:999px;
+      background: rgba(255,77,141,.12);
+      border:1px solid rgba(255,77,141,.22);
+      font-weight:800;
+      font-size:13px;
+      color:#b51f55;
+    }
+
+    .board{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:12px;
+    }
+
+    .card{
+      position:relative;
+      aspect-ratio: 1 / 1;
+      border-radius:16px;
+      cursor:pointer;
+      filter: drop-shadow(0 14px 14px var(--shadow));
+      overflow:hidden;
+      border:1px solid rgba(0,0,0,.06);
+      background:#fff;
+    }
+
+    .face{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .front{
+      background: linear-gradient(135deg, #fff, rgba(255,77,141,.18));
+      font-size:26px;
+    }
+
+    .back{
+      display:none;
+      background-size:cover;
+      background-position:center;
+      background-repeat:no-repeat;
+    }
+
+    .card.flipped .front{ display:none; }
+    .card.flipped .back{ display:block; }
+
+    /* ✅ pares acertados ficam “travados” abertos */
+    .card.matched{
+      cursor:default;
+    }
+
+    .controls{
+      margin-top:14px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    button{
+      border:0;
+      border-radius:14px;
+      padding:10px 14px;
+      font-weight:900;
+      cursor:pointer;
+    }
+    .btn-primary{
+      background: linear-gradient(135deg, var(--pink), #ff2f78);
+      color:#fff;
+    }
+    .btn-ghost{
+      background: rgba(0,0,0,.06);
+    }
+
+    .modal{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background: rgba(0,0,0,.35);
+      padding:18px;
+    }
+    .modal.show{ display:flex; }
+    .modal-card{
+      background:#fff;
+      padding:18px;
+      border-radius:18px;
+      width:min(500px, 90%);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Encontre os pares 💗</h1>
+        <div class="sub">Cada par é um momento nosso</div>
+      </div>
+
+      <div class="stats">
+        <div class="pill" id="moves">Tentativas: 0</div>
+        <div class="pill" id="pairs">Pares: 0/8</div>
+      </div>
+    </header>
+
+    <div class="board" id="board"></div>
+
+    <div class="controls">
+      <button class="btn-ghost" onclick="location.reload()">Reiniciar</button>
+      <button class="btn-primary" id="btnHint">Dica</button>
+    </div>
+  </div>
+
+  <div class="modal" id="modal">
+    <div class="modal-card">
+      <h2>Você conseguiu 🥰</h2>
+      <p>Agora vem a parte mais importante…</p>
+      <button class="btn-primary" onclick="window.location.href='index.html'">
+        Abrir cartinha 💌
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const images = [
+      "imgs/01.jpg","imgs/02.jpg","imgs/03.jpg","imgs/04.jpg",
+      "imgs/05.jpg","imgs/06.jpg","imgs/07.jpg","imgs/08.jpg"
+    ];
+
+    const board = document.getElementById("board");
+    const movesEl = document.getElementById("moves");
+    const pairsEl = document.getElementById("pairs");
+    const modal = document.getElementById("modal");
+
+    let first = null, second = null, lock = false;
+    let moves = 0, pairs = 0;
+
+    function shuffle(array){
+      for(let i=array.length-1;i>0;i--){
+        const j = Math.floor(Math.random()*(i+1));
+        [array[i],array[j]]=[array[j],array[i]];
+      }
+      return array;
+    }
+
+    function preload(list){
+      list.forEach(src => { const img = new Image(); img.src = src; });
+    }
+
+    function createBoard(){
+      board.innerHTML = "";
+      const deck = shuffle([...images, ...images]);
+
+      deck.forEach((src) => {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        card.innerHTML = `
+          <div class="face front">💗</div>
+          <div class="face back"></div>
+        `;
+
+        card.querySelector(".back").style.backgroundImage = `url('${src}')`;
+
+        card.addEventListener("click", () => flip(card, src));
+        board.appendChild(card);
+      });
+    }
+
+    function flip(card, src){
+      if(lock) return;
+      if(card.classList.contains("matched")) return;
+      if(card.classList.contains("flipped")) return;
+
+      card.classList.add("flipped");
+
+      if(!first){
+        first = { card, src };
+        return;
+      }
+
+      second = { card, src };
+      moves++;
+      movesEl.textContent = "Tentativas: " + moves;
+      lock = true;
+
+      if(first.src === second.src){
+        // ✅ marca como acertadas e mantém abertas
+        first.card.classList.add("matched");
+        second.card.classList.add("matched");
+
+        pairs++;
+        pairsEl.textContent = `Pares: ${pairs}/8`;
+        resetTurn();
+
+        if(pairs === 8){
+          setTimeout(() => modal.classList.add("show"), 500);
+        }
+      } else {
+        setTimeout(() => {
+          first.card.classList.remove("flipped");
+          second.card.classList.remove("flipped");
+          resetTurn();
+        }, 900);
+      }
+    }
+
+    function resetTurn(){
+      first = null;
+      second = null;
+      lock = false;
+    }
+
+    // ✅ Dica: mostra só as cartas que ainda NÃO foram acertadas
+    document.getElementById("btnHint").addEventListener("click", () => {
+      if(lock) return;
+
+      const toShow = document.querySelectorAll(".card:not(.matched):not(.flipped)");
+      toShow.forEach(c => c.classList.add("flipped"));
+
+      setTimeout(() => {
+        toShow.forEach(c => c.classList.remove("flipped"));
+      }, 1000);
+    });
+
+    preload(images);
+    createBoard();
+  </script>
+</body>
+</html>
